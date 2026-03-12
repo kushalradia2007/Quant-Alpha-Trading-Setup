@@ -1,0 +1,30 @@
+[
+  {
+    "trade_id": 1,
+    "simulated_date": "2026-01-10",
+    "logged_at": "2026-04-09 17:26:07",
+    "action": "SELL",
+    "ticker": "AAA.NS",
+    "side": "SELL",
+    "quantity": 100,
+    "price": 10.0,
+    "value": 1000.0,
+    "pnl": 0.0,
+    "capital_remaining": 0.0,
+    "notes": "Opened SELL"
+  },
+  {
+    "trade_id": 2,
+    "simulated_date": "2026-01-11",
+    "logged_at": "2026-04-09 17:26:07",
+    "action": "CLOSE",
+    "ticker": "AAA.NS",
+    "side": "SELL",
+    "quantity": 100,
+    "price": 8.0,
+    "value": 1200.0,
+    "pnl": 200.0,
+    "capital_remaining": 1200.0,
+    "notes": "Closed SELL"
+  }
+]

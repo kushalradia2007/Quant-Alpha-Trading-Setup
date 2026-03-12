@@ -1,0 +1,58 @@
+[
+  {
+    "trade_id": 1,
+    "simulated_date": "2025-10-10",
+    "logged_at": "2026-04-09 17:53:53",
+    "action": "SELL",
+    "ticker": "DIVISLAB.NS",
+    "side": "SELL",
+    "quantity": 154,
+    "price": 6474.5,
+    "value": 997073.0,
+    "pnl": 0.0,
+    "capital_remaining": 2927.0,
+    "notes": "Opened SELL"
+  },
+  {
+    "trade_id": 2,
+    "simulated_date": "2025-10-13",
+    "logged_at": "2026-04-09 17:57:37",
+    "action": "CLOSE",
+    "ticker": "DIVISLAB.NS",
+    "side": "SELL",
+    "quantity": 154,
+    "price": 6556.0,
+    "value": 984522.0,
+    "pnl": -12551.0,
+    "capital_remaining": 987449.0,
+    "notes": "Closed SELL"
+  },
+  {
+    "trade_id": 3,
+    "simulated_date": "2026-02-11",
+    "logged_at": "2026-04-09 23:29:10",
+    "action": "SELL",
+    "ticker": "EICHERMOT.NS",
+    "side": "SELL",
+    "quantity": 127,
+    "price": 7771.0,
+    "value": 986917.0,
+    "pnl": 0.0,
+    "capital_remaining": 532.0,
+    "notes": "Opened SELL"
+  },
+  {
+    "trade_id": 4,
+    "simulated_date": "2026-02-12",
+    "logged_at": "2026-04-09 23:32:18",
+    "action": "CLOSE",
+    "ticker": "EICHERMOT.NS",
+    "side": "SELL",
+    "quantity": 127,
+    "price": 7943.0,
+    "value": 965073.0,
+    "pnl": -21844.0,
+    "capital_remaining": 965605.0,
+    "notes": "Closed SELL"
+  }
+]

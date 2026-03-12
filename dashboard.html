@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpha Trading Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:      #0d0f12; --bg2:     #141720; --bg3:     #1c2028; --border:  #2a2f3a;
+    --muted:   #4a5568; --text:    #c9d1e0; --bright:  #e8edf5;
+    --green:   #34d399; --red:     #f87171; --amber:   #fbbf24;
+    --blue:    #60a5fa; --purple:  #a78bfa; --teal:    #2dd4bf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: var(--bright); letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .header-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: right; line-height: 1.8; }
+  main { padding: 28px 32px; max-width: 1300px; margin: 0 auto; }
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; position: relative; overflow: hidden; }
+  .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .stat.green::before { background: var(--green); } .stat.red::before { background: var(--red); }
+  .stat.blue::before { background: var(--blue); } .stat.amber::before { background: var(--amber); }
+  .stat.purple::before { background: var(--purple); }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; font-family: 'IBM Plex Mono', monospace; }
+  .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--bright); line-height: 1; }
+  .stat-value.pos { color: var(--green); } .stat-value.neg { color: var(--red); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: 'IBM Plex Mono', monospace; }
+  .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 28px; }
+  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-bottom: 16px; }
+  canvas { width: 100% !important; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; }
+  .positions-list { margin-top: 12px; }
+  .pos-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .pos-row:last-child { border-bottom: none; }
+  .pos-ticker { color: var(--bright); font-weight: 500; }
+  .pos-side { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+  .side-buy { background: rgba(52,211,153,.15); color: var(--green); } .side-sell { background: rgba(248,113,113,.15); color: var(--red); }
+  .pos-qty { color: var(--muted); } .pos-price { color: var(--text); }
+  .table-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .table-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .filter-row { display: flex; gap: 8px; }
+  .filter-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 12px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .filter-btn.active { background: rgba(96,165,250,.12); border-color: var(--blue); color: var(--blue); }
+  .filter-btn.buy.active { background: rgba(52,211,153,.12); border-color: var(--green); color: var(--green); }
+  .filter-btn.sell.active { background: rgba(248,113,113,.12); border-color: var(--red); color: var(--red); }
+  .filter-btn.close.active { background: rgba(251,191,36,.12); border-color: var(--amber); color: var(--amber); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  th { text-align: left; padding: 10px 16px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); background: var(--bg3); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 16px; border-bottom: 1px solid rgba(42,47,58,.6); color: var(--text); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; } tr:hover td { background: rgba(255,255,255,.02); }
+  .td-id { color: var(--muted); } .td-time { color: var(--muted); font-size: 11px; }
+  .td-action { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; padding: 3px 10px; border-radius: 4px; display: inline-block; }
+  .act-BUY { background: rgba(52,211,153,.15); color: var(--green); } .act-SELL { background: rgba(248,113,113,.15); color: var(--red); }
+  .act-CLOSE { background: rgba(251,191,36,.12); color: var(--amber); }
+  .td-ticker { color: var(--bright); font-weight: 500; }
+  .td-pnl.pos { color: var(--green); } .td-pnl.neg { color: var(--red); } .td-cap { color: var(--blue); }
+  .no-trades { text-align: center; padding: 40px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(3, 1fr); } .two-col { grid-template-columns: 1fr; } main { padding: 16px; } }
+  @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-dot"></div>ALPHA ENGINE &mdash; PAPER MODE</div>
+  <div class="header-meta"><div id="clock">--:--:--</div><div>NSE / NIFTY 50</div></div>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat blue"><div class="stat-label">Starting Capital</div><div class="stat-value" id="s-start">₹10,00,000</div><div class="stat-sub">Paper portfolio</div></div>
+    <div class="stat green"><div class="stat-label">Current Capital</div><div class="stat-value" id="s-capital">—</div><div class="stat-sub" id="s-cap-sub">—</div></div>
+    <div class="stat amber"><div class="stat-label">Realised P&amp;L</div><div class="stat-value" id="s-pnl">—</div><div class="stat-sub" id="s-pnl-sub">—</div></div>
+    <div class="stat purple"><div class="stat-label">Total Trades</div><div class="stat-value" id="s-trades">—</div><div class="stat-sub" id="s-win">—</div></div>
+    <div class="stat red"><div class="stat-label">Open Positions</div><div class="stat-value" id="s-open">—</div><div class="stat-sub">Active holdings</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="card-title">Equity Curve &mdash; Capital Over Time</div>
+    <canvas id="equityChart" height="80"></canvas>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="card-title">Open Positions</div>
+      <div class="positions-list" id="open-positions"><div class="no-trades">No open positions</div></div>
+    </div>
+    <div class="panel">
+      <div class="card-title">System Status</div>
+      <div class="positions-list">
+        <div class="no-trades">Engine Online. Monitoring WorldQuant Subset.</div>
+      </div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="card-title" style="margin:0">Trade Log</div>
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="ALL" onclick="setFilter('ALL')">All</button>
+        <button class="filter-btn buy" data-filter="BUY" onclick="setFilter('BUY')">Buy</button>
+        <button class="filter-btn sell" data-filter="SELL" onclick="setFilter('SELL')">Sell</button>
+        <button class="filter-btn close" data-filter="CLOSE" onclick="setFilter('CLOSE')">Close</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Timestamp</th><th>Action</th><th>Ticker</th><th>Qty</th><th>Price (₹)</th><th>Value (₹)</th><th>P&amp;L (₹)</th><th>Capital (₹)</th><th>Notes</th></tr></thead>
+        <tbody id="trade-tbody"><tr><td colspan="10" class="no-trades">Loading trades.json...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let allTrades = []; let activeFilter = 'ALL'; let equityChart = null;
+const fmt = n => '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 0});
+const fmtP = n => (n >= 0 ? '+' : '') + '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 0});
+const fmtPct = (n, base) => (n >= 0 ? '+' : '') + ((n / base) * 100).toFixed(2) + '%';
+
+function setFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderTable();
+}
+
+function renderStats() {
+  const INITIAL = 1000000; const last = allTrades[allTrades.length - 1];
+  const capital = last ? last.capital_remaining : INITIAL;
+  const totalPnl = allTrades.filter(t => t.action === 'CLOSE').reduce((s, t) => s + t.pnl, 0);
+  const closes = allTrades.filter(t => t.action === 'CLOSE');
+  const wins = closes.filter(t => t.pnl > 0).length;
+  const winPct = closes.length ? ((wins / closes.length) * 100).toFixed(0) + '%' : '—';
+  const open = new Map();
+  allTrades.forEach(t => { if (t.action === 'BUY' || t.action === 'SELL') open.set(t.ticker, t); if (t.action === 'CLOSE') open.delete(t.ticker); });
+
+  document.getElementById('s-capital').textContent = fmt(capital);
+  document.getElementById('s-capital').className = 'stat-value ' + (capital >= INITIAL ? 'pos' : 'neg');
+  document.getElementById('s-cap-sub').textContent = fmtPct(capital - INITIAL, INITIAL);
+  document.getElementById('s-pnl').textContent = fmtP(totalPnl);
+  document.getElementById('s-pnl').className = 'stat-value ' + (totalPnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('s-pnl-sub').textContent = `${closes.length} closed trades`;
+  document.getElementById('s-trades').textContent = allTrades.length;
+  document.getElementById('s-win').textContent = `Win rate: ${winPct}`;
+  document.getElementById('s-open').textContent = open.size;
+  renderPositions(open);
+}
+
+function renderPositions(open) {
+  const el = document.getElementById('open-positions');
+  if (open.size === 0) return el.innerHTML = '<div class="no-trades">No open positions</div>';
+  el.innerHTML = [...open.entries()].map(([ticker, t]) => `
+    <div class="pos-row"><span class="pos-ticker">${ticker.replace('.NS','')}</span><span class="pos-side side-${t.action.toLowerCase()}">${t.action}</span><span class="pos-qty">${t.quantity} qty</span><span class="pos-price">₹${Number(t.price).toLocaleString('en-IN')}</span></div>`).join('');
+}
+
+function renderTable() {
+  const trades = activeFilter === 'ALL' ? allTrades : allTrades.filter(t => t.action === activeFilter);
+  const tbody = document.getElementById('trade-tbody');
+  if (!trades.length) return tbody.innerHTML = '<tr><td colspan="10" class="no-trades">No trades to display</td></tr>';
+  tbody.innerHTML = [...trades].reverse().map(t => {
+    const pnlClass = t.pnl > 0 ? 'pos' : t.pnl < 0 ? 'neg' : '';
+    const pnlStr = t.pnl !== 0 ? fmtP(t.pnl) : '—';
+    return `<tr><td class="td-id">${t.trade_id}</td><td class="td-time">${t.timestamp}</td><td><span class="td-action act-${t.action}">${t.action}</span></td><td class="td-ticker">${t.ticker.replace('.NS','')}</td><td>${t.quantity}</td><td>${Number(t.price).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td><td>${Number(t.value).toLocaleString('en-IN', {maximumFractionDigits:0})}</td><td class="td-pnl ${pnlClass}">${pnlStr}</td><td class="td-cap">${Number(t.capital_remaining).toLocaleString('en-IN', {maximumFractionDigits:0})}</td><td style="color:var(--muted)">${t.notes}</td></tr>`;
+  }).join('');
+}
+
+function renderChart() {
+  const points = allTrades.map(t => ({ x: t.timestamp, y: t.capital_remaining }));
+  if (equityChart) equityChart.destroy();
+  const ctx = document.getElementById('equityChart').getContext('2d');
+  const labels = points.map(p => p.x), values = points.map(p => p.y), startCap = 1000000;
+  equityChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor: '#60a5fa', borderWidth: 2, backgroundColor: (ctx) => { const g = ctx.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0, 'rgba(96,165,250,0.18)'); g.addColorStop(1, 'rgba(96,165,250,0)'); return g; }, fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: values.map(v => v >= startCap ? '#34d399' : '#f87171'), pointBorderColor: '#0d0f12', pointBorderWidth: 2 }] },
+    options: { responsive: true, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c2028', borderColor: '#2a2f3a', borderWidth: 1, titleColor: '#4a5568', bodyColor: '#60a5fa', callbacks: { label: ctx => ' Capital: ₹' + ctx.raw.toLocaleString('en-IN') } } }, scales: { x: { ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 8 }, grid: { color: 'rgba(42,47,58,0.6)' } }, y: { ticks: { color: '#4a5568', font: { family: 'IBM Plex Mono', size: 10 }, callback: v => '₹' + (v/100000).toFixed(1) + 'L' }, grid: { color: 'rgba(42,47,58,0.6)' } } } }
+  });
+}
+
+function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-IN', { hour12: false }); }
+async function loadData() {
+  try {
+    const r = await fetch('trades.json');
+    if (!r.ok) throw new Error('File not found');
+    allTrades = await r.json();
+    renderStats(); renderTable(); renderChart();
+  } catch(e) { document.getElementById('trade-tbody').innerHTML = `<tr><td colspan="10" class="no-trades">Place trades.json in the same folder and open this file via a local server.<br><small style="color:var(--muted);font-size:10px">python3 -m http.server 8080</small></td></tr>`; }
+}
+setInterval(updateClock, 1000); updateClock(); loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+trade_id,simulated_date,logged_at,action,ticker,side,quantity,price,value,pnl,capital_remaining,notes
+1,2026-01-10,2026-04-09 17:26:28,SELL,AAA.NS,SELL,100,10.0,1000.0,0.0,0.0,Opened SELL
+2,2026-01-11,2026-04-09 17:26:28,CLOSE,AAA.NS,SELL,100,8.0,1200.0,200.0,1200.0,Closed SELL
