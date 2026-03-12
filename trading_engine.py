@@ -20,9 +20,6 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
 ALPHA_FILE      = "alphas.csv"
 TRADE_LOG_CSV   = "trade_log.csv"
 TRADES_JSON     = "trades.json"
@@ -159,9 +156,6 @@ def normalize_alpha_expression(expression: str) -> str:
     expr = re.sub(r"\badv(\d+(?:\.\d+)?)\b", r"adv(\1)", expr, flags=re.IGNORECASE)
     return expr
 
-# ─────────────────────────────────────────────
-# ROBUST ALPHA EVALUATOR
-# ─────────────────────────────────────────────
 class AlphaEvaluator:
     """Evaluates WorldQuant-style alpha expressions safely."""
 
@@ -329,9 +323,6 @@ class AlphaEvaluator:
             return pd.Series(dtype=float)
 
 
-# ─────────────────────────────────────────────
-# DATA FETCHER & PORTFOLIO LOGIC
-# ─────────────────────────────────────────────
 def fetch_data(tickers: list[str], lookback_days: int) -> dict[str, pd.DataFrame]:
     end = datetime.today()
     start = end - timedelta(days=lookback_days + 15)
@@ -346,7 +337,6 @@ def fetch_data(tickers: list[str], lookback_days: int) -> dict[str, pd.DataFrame
     for t in tickers:
         try:
             df = raw[t].dropna()
-            # CRITICAL FIX: Scrub duplicate timestamps returned by yfinance
             df = df[~df.index.duplicated(keep='first')]
             if len(df) >= 20:
                 data[t] = df

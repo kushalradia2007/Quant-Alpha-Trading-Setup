@@ -8,22 +8,17 @@ import sys
 import pandas as pd
 from datetime import datetime, timedelta
 
-# Import your existing engine components
 from trading_engine import (
     NIFTY_50, ALPHA_FILE, fetch_data, load_alphas, 
     AlphaEvaluator, generate_signals_from_cache, PaperPortfolio
 )
 
-# ─────────────────────────────────────────────
-# BACKTEST CONFIGURATION
-# ─────────────────────────────────────────────
 BACKTEST_MONTHS = 6
 CAPITAL         = 1_000_000
 TOP_N           = 5
 BOTTOM_N        = 5
 VOTE_THRESHOLD  = 0.5
 
-# Separate log files so we don't overwrite your live paper trading data
 BACKTEST_CSV    = "backtest_log.csv"
 BACKTEST_JSON   = "backtest_trades.json"
 BACKTEST_DAILY_CSV = "backtest_daily_log.csv"
@@ -33,9 +28,6 @@ def timestamped_output_path(path: str, run_stamp: str) -> str:
     stem, ext = os.path.splitext(path)
     return f"{stem}_{run_stamp}{ext}"
 
-# ─────────────────────────────────────────────
-# MUTE PRINTS FOR SPEED (Optional)
-# ─────────────────────────────────────────────
 class HiddenPrints:
     """Context manager to suppress the massive amount of terminal prints during backtesting."""
     def __enter__(self):
@@ -45,15 +37,11 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
-# ─────────────────────────────────────────────
-# MAIN BACKTEST LOOP
-# ─────────────────────────────────────────────
 def run_backtest():
     print("\n" + "=" * 60)
     print(f"  ALPHA ENGINE - {BACKTEST_MONTHS}-MONTH WALK-FORWARD BACKTEST")
     print("=" * 60 + "\n")
 
-    # 1. Each run gets its own output files so completed logs never mix with partial runs.
     run_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backtest_csv = timestamped_output_path(BACKTEST_CSV, run_stamp)
     backtest_json = timestamped_output_path(BACKTEST_JSON, run_stamp)
@@ -67,7 +55,6 @@ def run_backtest():
         unsupported_ids = ", ".join(unsupported["alpha_id"].tolist())
         print(f"[ALPHAS] Skipping {len(unsupported)} alphas for this run due to missing data support: {unsupported_ids}")
     
-    # 2. Fetch historical data with a large enough buffer for 250-day rolling alphas.
     total_days = (30 * BACKTEST_MONTHS) + 400
     full_data = fetch_data(NIFTY_50, lookback_days=total_days)
     
@@ -75,8 +62,6 @@ def run_backtest():
         print("[ERROR] No data fetched.")
         return
 
-    # 3. Determine the trading days within the 6-month window
-    # We use Reliance as a proxy to get a clean list of NSE trading days (excluding weekends/holidays)
     proxy_df = full_data[NIFTY_50[0]]
     all_dates = proxy_df.index
     backtest_start_date = all_dates[-1] - pd.Timedelta(days=30 * BACKTEST_MONTHS)
@@ -95,15 +80,12 @@ def run_backtest():
             alpha_cache[row["alpha_id"]] = result
     print(f"[BACKTEST] Alpha histories ready for {len(alpha_cache)} alphas.")
     
-    # Initialize the portfolio tracker
     portfolio = PaperPortfolio(CAPITAL, backtest_csv, backtest_json)
     daily_rows = []
 
-    # 4. The Walk-Forward Loop
     for i, current_date in enumerate(trading_days):
         print(f"\r  [SIMULATING] Date: {current_date.date()}  ({i+1}/{len(trading_days)})", end="")
         
-        # SLICE DATA: Cut off all data after the current simulated date (Zero Lookahead Bias)
         sliced_data = {}
         for ticker, df in full_data.items():
             past_data = df.loc[:current_date]
@@ -113,7 +95,6 @@ def run_backtest():
         if not sliced_data:
             continue
 
-        # Suppress the hundreds of "[EVAL]" print statements to speed up the loop
         signals = generate_signals_from_cache(
             alphas_df, alpha_cache, current_date, list(sliced_data.keys()),
             TOP_N, BOTTOM_N, VOTE_THRESHOLD
